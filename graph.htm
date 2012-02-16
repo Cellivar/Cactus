@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>CACTUS Graphing</title>
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+        google.load('visualization', '1', { packages: ['imagelinechart'] });
+    </script>
+    <script type="text/javascript">
+        function getTxtData() {
+            xmlhttp = new XMLHttpRequest();
+            xmlhttp.open("GET", "DATALOG.TXT", true);
+
+            xmlhttp.onreadystatechange = function () {
+                if (xmlhttp.readyState == 4) {
+                    //Load in the data file to an array
+                    var dataFile = xmlhttp.responseText;
+                    var temparray = new Array();
+                    temparray = dataFile.split(/\r\n|\r|\n/);
+                    if (temparray.length > 20) {
+                        temparray = temparray.slice(temparray.length - 20);
+                    }
+
+                    //Fill array to completion with null data if not full.
+                    temparray.reverse();
+                    if (temparray.length < 20) {
+                        while (temparray.length < 20) {
+                            temparray.push(100);
+                        }
+                    }
+                    
+                    //Create graph
+                    var data = new google.visualization.DataTable();
+
+                    //Set up graph fields
+                    data.addColumn('date', 'Time');
+                    data.addColumn('number', 'Temperature');
+                    data.addRows(20);
+
+                    var currentTime = new Date();
+                    //Round times down to previous half hour
+                    if (currentTime.getMinutes() <= 30) {
+                        currentTime.setMinutes(0);
+                    }
+                    else if (currentTime.getMinutes() > 30) {
+                        currentTime.setMinutes(30);
+                    }
+
+                    //Fill graph with temperature data
+                    var len = temparray.length;
+
+                    for (var i = 0; i <= 19; i = i + 1) {
+                        tempVal = temparray.pop();
+                        tempTime = new Date(currentTime.getTime() - (1800000 * (19-i)));
+                        data.setCell(i, 0, tempTime);
+                        data.setCell(i, 1, parseFloat(tempVal));
+                    }
+
+                    //Format time correctly
+                    var date_formatter = new google.visualization.DateFormat({ pattern: "HH:mm" })
+                    date_formatter.format(data, 0);
+
+                    //Set graph details
+                    var options = {
+                        'width': 1000,
+                        'height': 500,
+                        'title': 'CACTUS Temperatures (F)',
+                        'legend': 'none',
+                        'min': 60,
+                        'max': 100,
+                    };
+
+                    // Create and draw the visualization.
+                    new google.visualization.ImageLineChart(document.getElementById('visualization')).
+                    draw(data, options)
+
+                }
+            }
+            xmlhttp.send(null);
+        }
+        
+        google.setOnLoadCallback(getTxtData);
+    </script>
+
+</head>
+<body style="font-family: Arial; border: 0 none; text-align:center;">
+    <div id="visualization" style=" text-align:center; background: #FFF;">
+    </div>
+</body>
+</html>
